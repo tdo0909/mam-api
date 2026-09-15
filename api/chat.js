@@ -1,43 +1,40 @@
 export default async function handler(req, res) {
-    if (req.method !== "POST") {
-        return res.status(405).json({
-            error: "Method not allowed"
-        });
-    }
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-    try {
-        const { contents } = req.body;
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
 
-        const response = await fetch(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-goog-api-key": process.env.GEMINI_API_KEY
-                },
-                body: JSON.stringify({
-                    contents: contents
-                })
-            }
-        );
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      error: { message: "Method not allowed" }
+    });
+  }
 
-        const data = await response.json();
+  try {
+    const { contents } = req.body;
 
-        if (!response.ok) {
-            return res.status(response.status).json(data);
-        }
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY
+        },
+        body: JSON.stringify({
+          contents
+        })
+      }
+    );
 
-        const text =
-            data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-        return res.status(200).json({
-            text: text
-        });
-
-    } catch (error) {
-        return res.status(500).json({
-            error: error.message
-        });
-    }
+    const data = await response.json();
+    return res.status(response.status).json(data);
+  } catch (error) {
+    return res.status(500).json({
+      error: { message: error.message }
+    });
+  }
 }
